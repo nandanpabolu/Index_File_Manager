@@ -76,3 +76,141 @@ class CommandHandler:
         parts = user_input.strip().split()
         command = parts[0].lower()
         args = parts[1:]
+        command_methods = {
+            'create': self._handle_create,
+            'open': self._handle_open,
+            'insert': self._handle_insert,
+            'search': self._handle_search,
+            'load': self._handle_load,
+            'print': self._handle_print,
+            'extract': self._handle_extract,
+            'quit': self._handle_quit,
+            'help': self._handle_help
+        }
+
+        if command in command_methods:
+            command_methods[command](args)
+        else:
+            raise InvalidCommandError("Invalid command. Type 'help' for a list of commands.")
+
+    def _handle_create(self, args):
+        if len(args) != 1:
+            print("Usage: create <filename>")
+            return
+        filename = args[0]
+        self.index_file_manager.create_and_open_index_file(filename)
+
+    def _handle_open(self, args):
+        if len(args) != 1:
+            print("Usage: open <filename>")
+            return
+        filename = args[0]
+        self.index_file_manager.open_index_file(filename)
+
+    def _handle_insert(self, args):
+        if len(args) != 2:
+            print("Usage: insert <key> <value>")
+            return
+        try:
+            key = int(args[0])
+            value = int(args[1])
+            if key < 0 or value < 0:
+                print("Error: Keys and values must be unsigned integers.")
+                return
+            self.index_file_manager.insert_key_value(key, value)
+            print(f"Successfully inserted key {key}.")
+        except ValueError:
+            print("Error: Keys and values must be unsigned integers.")
+        except DuplicateKeyError as e:
+            print(e)
+
+    def _handle_search(self, args):
+        if len(args) != 1:
+            print("Usage: search <key>")
+            return
+        try:
+            key = int(args[0])
+            if key < 0:
+                print("Error: Keys must be unsigned integers.")
+                return
+            value = self.index_file_manager.search_key(key)
+            print(f"Found key {key} with value {value}.")
+        except ValueError:
+            print("Error: Keys must be unsigned integers.")
+        except KeyNotFoundError as e:
+            print(e)
+
+    def _handle_load(self, args):
+        if len(args) != 1:
+            print("Usage: load <filename>")
+            return
+        filename = args[0]
+        self.index_file_manager.load_from_file(filename)
+
+    def _handle_print(self, args):
+        self.index_file_manager.print_all()
+
+    def _handle_extract(self, args):
+        if len(args) != 1:
+            print("Usage: extract <filename>")
+            return
+        filename = args[0]
+        self.index_file_manager.extract_to_file(filename)
+
+    def _handle_quit(self, args):
+        confirm = input("Are you sure you want to quit? (yes/no): ").strip().lower()
+        if confirm == 'yes':
+            print("Exiting program.")
+            sys.exit(0)
+
+    def _handle_help(self, args):
+        help_text = """
+Available commands:
+  create <filename>      Create a new index file.
+  open <filename>        Open an existing index file.
+  insert <key> <value>   Insert a key/value pair into the index.
+  search <key>           Search for a key in the index.
+  load <filename>        Load key/value pairs from a file.
+  print                  Print all key/value pairs in the index.
+  extract <filename>     Extract all key/value pairs to a file.
+  quit                   Exit the program.
+  help                   Show this help message.
+"""
+        print(help_text)
+
+class IndexFileManager:
+    """Manages index file operations."""
+
+    def __init__(self):
+        self.current_file = None
+        self.header = None  # {'root_block': int, 'next_block': int}
+        self.btree = None  # Instance of BTree
+
+    def create_and_open_index_file(self, filename):
+        """Creates and opens a new index file."""
+        if os.path.exists(filename):
+            overwrite = input(f"File '{filename}' already exists. Overwrite? (yes/no): ").strip().lower()
+            if overwrite != 'yes':
+                print("Aborted file creation.")
+                return
+        try:
+            self._write_header_to_file(filename)
+            self.open_index_file(filename)
+            print(f"Index file '{filename}' created and opened successfully.")
+        except IndexFileError as e:
+            print(e)
+
+    def _write_header_to_file(self, filename):
+        """Writes the header to a new index file."""
+        try:
+            with open(filename, 'wb') as f:
+                f.write(HEADER_MAGIC)
+                f.write(struct.pack('>Q', 0))  # Root block ID (initially zero)
+                f.write(struct.pack('>Q', 1))  # Next block ID to be added (starts at 1)
+                padding_size = BLOCK_SIZE - len(HEADER_MAGIC) - (2 * 8)
+                f.write(b'\x00' * padding_size)  # Padding to fill header block
+        except IOError as e:
+            logger.error(f"Could not write header to file '{filename}'. {str(e)}")
+            raise IndexFileError(f"Error: Could not create index file '{filename}'.")
+        
+        #Stopped here, need some rest and will begin tomorrow!
