@@ -92,3 +92,60 @@ After setting up the basic command loop and the CommandHandler class, I realized
 	•	In the command handlers, checked that the correct number of arguments is provided.
 	•	Converted input strings to integers where necessary and validated that they are non-negative.
 	•	Caught and handled specific exceptions, providing clear error messages to the user.
+
+## December 1st 12:53 pm
+ **Thoughts:**
+
+    After setting up the command handlers and basic index file creation, I needed to implement the core functionalities of the IndexFileManager class that interact with the B-tree. This includes opening existing index files, inserting key/value pairs, searching for keys, loading data from files, printing all entries, and extracting data to files. These methods are crucial for the program’s operation and require careful error handling and validation.
+
+**Plan:**
+
+        •	Implement the open_index_file Method:
+        •	Open an existing index file and validate its format.
+        •	Read the header information to initialize the B-tree.
+        •	Handle errors if the file is not valid or cannot be opened.
+        •	Implement B-tree Interaction Methods with Decorators:
+        •	Use the @require_file_open decorator to ensure an index file is open before executing methods.
+        •	Implement the following methods:
+        •	insert_key_value: Insert a key/value pair into the B-tree.
+        •	search_key: Search for a key in the B-tree.
+        •	load_from_file: Load key/value pairs from a file into the B-tree.
+        •	print_all: Print all key/value pairs in the B-tree.
+        •	extract_to_file: Extract all key/value pairs from the B-tree to a file.
+        •	Ensure each method handles exceptions and provides user feedback.
+
+**Actions Taken:**
+
+        1.	Implemented open_index_file Method:
+        •	Checked if the specified file exists.
+        •	Opened the file in binary read mode.
+        •	Read and validated the magic number to ensure it’s a valid index file.
+        •	Extracted the root block ID and next block ID from the file header.
+        •	Initialized the B-tree with the current index file manager.
+        •	Added error handling for IOError and FileFormatError.
+        2.	Applied @require_file_open Decorator:
+        •	Decorated methods that require an open index file to prevent execution if no file is open.
+        •	Ensured the user is informed if they attempt to use these methods without an open file.
+        3.	Implemented insert_key_value Method:
+        •	Checked if the B-tree is initialized; if not, initialized it.
+        •	Called the insert method on the B-tree to add the key/value pair.
+        •	Handled DuplicateKeyError exceptions by logging and re-raising them.
+        4.	Implemented search_key Method:
+        •	Ensured the B-tree is initialized.
+        •	Called the search method on the B-tree.
+        •	Returned the value if found, or raised a KeyNotFoundError if not.
+        5.	Implemented load_from_file Method:
+        •	Checked if the specified file exists.
+        •	Opened the file and read it line by line.
+        •	Parsed each line to extract key/value pairs, skipping invalid lines.
+        •	Performed batch insertion of valid key/value pairs.
+        •	Provided feedback on invalid lines and duplicates.
+        6.	Implemented print_all Method:
+        •	Ensured the B-tree is initialized.
+        •	Performed an in-order traversal of the B-tree to collect all key/value pairs.
+        •	Printed the key/value pairs if any, or indicated that the B-tree is empty.
+        7.	Implemented extract_to_file Method:
+        •	Checked if the output file exists and prompted for overwrite confirmation.
+        •	Collected all key/value pairs from the B-tree.
+        •	Wrote the key/value pairs to the specified file.
+        •	Handled IOError exceptions and informed the user of any issues. 
