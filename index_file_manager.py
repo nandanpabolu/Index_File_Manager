@@ -212,5 +212,112 @@ class IndexFileManager:
         except IOError as e:
             logger.error(f"Could not write header to file '{filename}'. {str(e)}")
             raise IndexFileError(f"Error: Could not create index file '{filename}'.")
-        
-        #Stopped here, need some rest and will begin tomorrow!
+
+    def open_index_file(self, filename):
+        """Opens an existing index file."""
+        if not os.path.exists(filename):
+            print(f"Error: File '{filename}' does not exist.")
+            return
+        try:
+            with open(filename, 'rb') as f:
+                magic = f.read(8)
+                if magic != HEADER_MAGIC:
+                    raise FileFormatError(f"Error: File '{filename}' is not a valid index file.")
+                root_block = struct.unpack('>Q', f.read(8))[0]
+                next_block = struct.unpack('>Q', f.read(8))[0]
+                self.header = {'root_block': root_block, 'next_block': next_block}
+            self.current_file = filename
+            self.btree = BTree(self)
+            print(f"Index file '{filename}' opened successfully.")
+        except (IOError, FileFormatError) as e:
+            logger.error(str(e))
+            print(e)
+
+    @require_file_open
+    def insert_key_value(self, key, value):
+        """Inserts a key/value pair into the B-tree."""
+        try:
+            if not self.btree:
+                self.btree = BTree(self)
+            self.btree.insert(key, value)
+        except DuplicateKeyError as e:
+            logger.error(str(e))
+            raise
+
+    @require_file_open
+    def search_key(self, key):
+        """Searches for a key in the B-tree."""
+        if not self.btree:
+            self.btree = BTree(self)
+        result = self.btree.search(key)
+        if result is not None:
+            return result
+        else:
+            raise KeyNotFoundError(f"Error: Key {key} not found in the index.")
+
+    @require_file_open
+    def load_from_file(self, filename):
+        """Loads key/value pairs from a file into the B-tree."""
+        if not os.path.exists(filename):
+            print(f"Error: File '{filename}' does not exist.")
+            return
+        try:
+            batch = []
+            with open(filename, 'r') as input_file:
+                for line in input_file:
+                    line = line.strip()
+                    if not line:
+                        continue
+                    try:
+                        key_str, value_str = line.split(',')
+                        key = int(key_str.strip())
+                        value = int(value_str.strip())
+                        if key < 0 or value < 0:
+                            print(f"Error: Invalid key/value '{line}'. Skipping.")
+                            continue
+                        batch.append((key, value))
+                    except ValueError:
+                        print(f"Error: Invalid line '{line}'. Skipping.")
+            # Batch insertion
+            for key, value in batch:
+                try:
+                    self.insert_key_value(key, value)
+                except DuplicateKeyError as e:
+                    print(e)
+            print(f"Loaded key/value pairs from '{filename}'.")
+        except IOError as e:
+            logger.error(str(e))
+            print(f"Error: Could not read from file '{filename}'.")
+
+    @require_file_open
+    def print_all(self):
+        """Prints all key/value pairs in the B-tree."""
+        if not self.btree:
+            self.btree = BTree(self)
+        all_key_values = []
+        self.btree.traverse(all_key_values)
+        if all_key_values:
+            print("Key/Value pairs in the index:")
+            for key, value in all_key_values:
+                print(f"Key: {key}, Value: {value}")
+        else:
+            print("The B-tree is empty.")
+
+    @require_file_open
+    def extract_to_file(self, filename):
+        """Extracts all key/value pairs to a file."""
+        if os.path.exists(filename):
+            overwrite = input(f"File '{filename}' already exists. Overwrite? (yes/no): ").strip().lower()
+            if overwrite != 'yes':
+                print("Aborted extraction.")
+                return
+        try:
+            with open(filename, 'w') as output_file:
+                all_key_values = []
+                self.btree.traverse(all_key_values)
+                for key, value in all_key_values:
+                    output_file.write(f"{key},{value}\n")
+            print(f"Extracted all key/value pairs to '{filename}'.")
+        except IOError as e:
+            logger.error(str(e))
+            print(f"Error: Could not write to file '{filename}'.")
