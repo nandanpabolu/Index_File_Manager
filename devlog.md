@@ -297,7 +297,7 @@ In this session, the focus was on finalizing key functionalities for the `BTree`
 
 ## December 1st 9:40 pm
 
-	•	Indentation Corrections:
+	Indentation Corrections:
 	•	Ensured that all class and method definitions have consistent indentation.
 	•	Fixed indentation levels within methods, especially in loops and conditional statements.
 	•	Made sure decorators like @require_file_open are properly aligned with the methods they decorate.
@@ -315,3 +315,8 @@ In this session, the focus was on finalizing key functionalities for the `BTree`
 	•	Functionality Verification:
 	•	Made sure that the main function is correctly defined and that the program starts as expected.
 	•	Confirmed that all required methods are present in the BTreeNode and BTree classes.
+
+## December 1st 9:50pm 
+
+    - Created Readme.md file and updated with required notes for TA 
+    
