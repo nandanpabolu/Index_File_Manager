@@ -247,7 +247,7 @@ To complete the B-Tree implementation, the focus of this session was on traversa
 	•	Managed the initialization of the root node when inserting into an empty tree.
 	•	Handled splitting of a full root node and updated the header accordingly.
 
-## December 1st 8:42 pm
+## December 1st 9:32 pm
 ### **Thoughts:**
 
 In this session, the focus was on finalizing key functionalities for the `BTree` class and ensuring proper integration with the main program. The addition of `search` and `traverse` methods ensures that the tree can handle lookups and traversals efficiently. The `main` function serves as the entry point for the program, linking the `IndexFileManager` and `CommandHandler` to provide an interactive user interface.
@@ -294,3 +294,24 @@ In this session, the focus was on finalizing key functionalities for the `BTree`
 	•	Created a main function to serve as the program’s entry point:
 	•	Initialized the IndexFileManager and CommandHandler.
 	•	Started the command loop for user interaction.
+
+## December 1st 9:40 pm
+
+	•	Indentation Corrections:
+	•	Ensured that all class and method definitions have consistent indentation.
+	•	Fixed indentation levels within methods, especially in loops and conditional statements.
+	•	Made sure decorators like @require_file_open are properly aligned with the methods they decorate.
+	•	Code Cleanup:
+	•	Removed any unnecessary comments or repeated code.
+	•	Verified that all methods and functions are correctly defined and closed.
+	•	Ensured that the code follows PEP 8 styling guidelines where possible.
+	•	Syntax Corrections:
+	•	Checked for missing colons (:) after class and function definitions.
+	•	Made sure all parentheses and brackets are properly closed.
+	•	Fixed variable names and ensured consistency throughout the code.
+	•	Error Handling:
+	•	Verified that all exceptions are properly caught and handled.
+	•	Ensured that user feedback is provided where appropriate.
+	•	Functionality Verification:
+	•	Made sure that the main function is correctly defined and that the program starts as expected.
+	•	Confirmed that all required methods are present in the BTreeNode and BTree classes.
