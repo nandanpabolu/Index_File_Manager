@@ -193,4 +193,56 @@ The focus of this session was to implement the header update mechanism and final
         • Implemented split_child to split full nodes and propagate keys to parent nodes.
     5. Search Operation:
 	    • Added a recursive search method to locate keys within a node or its children.
-    
+
+
+## December 1st 8:42 pm
+### **Thoughts:**
+
+To complete the B-Tree implementation, the focus of this session was on traversal, insertion, and managing the root node of the B-Tree. The `traverse` method ensures in-order traversal of the tree, while the `insert` method manages adding new key-value pairs, including handling cases where the root node is full and needs to split. This is a critical part of maintaining the B-Tree's structural properties.
+### **Plan:**
+
+1. **Traversal Implementation:**
+   - Add a method to perform an in-order traversal of the B-Tree, collecting all key-value pairs.
+   - Ensure the method correctly handles both leaf and non-leaf nodes.
+
+2. **B-Tree Insertion Logic:**
+   - Manage the root node during insertions:
+     - Handle cases where the root is empty (tree is being initialized).
+     - Handle cases where the root is full and needs to split.
+   - Ensure the B-Tree properties are maintained during insertions.
+
+3. **Testing and Error Handling:**
+   - Test traversal for edge cases such as empty trees, single-node trees, and deeper trees.
+   - Validate insertion logic for both leaf and non-leaf nodes, including root splits.
+### **Actions Taken:**
+#### **1. Implemented Traversal:**
+- Created the `traverse` method in `BTreeNode` to perform an in-order traversal:
+  - Recursively visited child nodes in sorted order.
+  - Collected all key-value pairs into a provided result list.
+  ```python
+  def traverse(self, result_list):
+      """Performs an in-order traversal of the subtree rooted at this node."""
+      for i in range(self.num_keys):
+          if not self.is_leaf():
+              child_node = BTreeNode(self.index_file_manager, self.children[i])
+              child_node.traverse(result_list)
+          result_list.append((self.keys[i], self.values[i]))
+      if not self.is_leaf():
+          child_node = BTreeNode(self.index_file_manager, self.children[self.num_keys])
+          child_node.traverse(result_list)
+#### **2. Root Node Management in B-Tree:**
+
+	•	Added logic to the BTree class to initialize the root node if it is empty:
+	•	Created a new BTreeNode and updated the header.
+	•	Handled the case where the root node is full:
+	•	Split the root node into two child nodes.
+	•	Created a new root node to accommodate the split key.
+
+### **Code Changes:**
+
+	1.	Traversal in BTreeNode:
+	•	Added the traverse method to recursively collect key-value pairs in sorted order.
+	•	Ensured the method handles leaf and non-leaf nodes correctly.
+	2.	B-Tree Insertion in BTree:
+	•	Managed the initialization of the root node when inserting into an empty tree.
+	•	Handled splitting of a full root node and updated the header accordingly.

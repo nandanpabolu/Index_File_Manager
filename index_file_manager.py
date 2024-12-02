@@ -484,3 +484,50 @@ class BTreeNode:
         else:
             child_node = BTreeNode(self.index_file_manager, self.children[i])
             return child_node.search(key)
+    
+    def traverse(self, result_list):
+        """Performs an in-order traversal of the subtree rooted at this node."""
+        for i in range(self.num_keys):
+            if not self.is_leaf():
+                child_node = BTreeNode(self.index_file_manager, self.children[i])
+                child_node.traverse(result_list)
+            result_list.append((self.keys[i], self.values[i]))
+        if not self.is_leaf():
+            child_node = BTreeNode(self.index_file_manager, self.children[self.num_keys])
+            child_node.traverse(result_list)
+
+class BTree:
+    """Represents the B-tree structure."""
+
+    def __init__(self, index_file_manager):
+        self.index_file_manager = index_file_manager
+        self.root = None
+        if self.index_file_manager.header['root_block'] == 0:
+            pass
+        else:
+            self.root = BTreeNode(self.index_file_manager, self.index_file_manager.header['root_block'])
+
+    def insert(self, key, value):
+        """Inserts a key/value pair into the B-tree."""
+        if self.root is None:
+            self.root = BTreeNode(self.index_file_manager, is_new=True)
+            self.root.keys.append(key)
+            self.root.values.append(value)
+            self.root.num_keys = 1
+            self.index_file_manager.header['root_block'] = self.root.block_id
+            self.root._write_node()
+            self.index_file_manager.update_header()
+        else:
+            if self.root.num_keys == 2*MIN_DEGREE -1:
+                s = BTreeNode(self.index_file_manager, is_new=True)
+                s.children.append(self.root.block_id)
+                s.num_keys = 0
+                self.root.parent_block = s.block_id
+                self.root._write_node()
+                s.split_child(0, self.root)
+                self.root = s
+                self.index_file_manager.header['root_block'] = self.root.block_id
+                self.index_file_manager.update_header()
+                self.root.insert_non_full(key, value)
+            else:
+                self.root.insert_non_full(key, value)
