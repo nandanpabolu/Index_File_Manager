@@ -321,3 +321,166 @@ class IndexFileManager:
         except IOError as e:
             logger.error(str(e))
             print(f"Error: Could not write to file '{filename}'.")
+    def update_header(self):
+        """Updates the header information in the index file."""
+        try:
+            with open(self.current_file, 'r+b') as f:
+                f.seek(0)
+                f.write(HEADER_MAGIC)
+                f.write(struct.pack('>Q', self.header['root_block']))
+                f.write(struct.pack('>Q', self.header['next_block']))
+                padding_size = BLOCK_SIZE - len(HEADER_MAGIC) - (2 * 8)
+                f.write(b'\x00' * padding_size)  # Padding to fill header block
+        except IOError as e:
+            logger.error(str(e))
+            print(f"Error: Could not update header in file '{self.current_file}'.")
+
+class BTreeNode:
+    """Represents a node in the B-tree."""
+
+    def __init__(self, index_file_manager, block_id=None, is_new=False):
+        self.index_file_manager = index_file_manager
+        self.block_id = block_id
+        self.parent_block = 0  # Block id of parent, 0 if root
+        self.num_keys = 0
+        self.keys = []
+        self.values = []
+        self.children = []
+        if is_new:
+            self.block_id = self.index_file_manager.header['next_block']
+            self.index_file_manager.header['next_block'] += 1
+            self._write_node()
+            self.index_file_manager.update_header()
+        elif block_id is not None:
+            self._read_node()
+
+    def _write_node(self):
+        """Writes the node to the file at its block position."""
+        try:
+            with open(self.index_file_manager.current_file, 'r+b') as f:
+                f.seek(self.block_id * BLOCK_SIZE)
+                data = b''
+                data += struct.pack('>Q', self.block_id)
+                data += struct.pack('>Q', self.parent_block)
+                data += struct.pack('>Q', self.num_keys)
+                keys_padded = self.keys + [0] * (19 - len(self.keys))
+                values_padded = self.values + [0] * (19 - len(self.values))
+                for key in keys_padded:
+                    data += struct.pack('>Q', key)
+                for value in values_padded:
+                    data += struct.pack('>Q', value)
+                children_padded = self.children + [0] * (20 - len(self.children))
+                for child in children_padded:
+                    data += struct.pack('>Q', child)
+                data += b'\x00' * (BLOCK_SIZE - len(data))
+                f.write(data)
+        except IOError as e:
+            logger.error(str(e))
+            print(f"Error: Could not write node to file '{self.index_file_manager.current_file}'.")
+
+    def _read_node(self):
+        """Reads the node from the file at its block position."""
+        try:
+            with open(self.index_file_manager.current_file, 'rb') as f:
+                f.seek(self.block_id * BLOCK_SIZE)
+                block_data = f.read(BLOCK_SIZE)
+                if len(block_data) < BLOCK_SIZE:
+                    print(f"Error: Incomplete block read for block_id {self.block_id}.")
+                    return
+                self.block_id, self.parent_block, self.num_keys = struct.unpack('>QQQ', block_data[:24])
+                offset = 24
+                self.keys = []
+                for _ in range(19):
+                    key = struct.unpack('>Q', block_data[offset:offset+8])[0]
+                    self.keys.append(key)
+                    offset +=8
+                self.values = []
+                for _ in range(19):
+                    value = struct.unpack('>Q', block_data[offset:offset+8])[0]
+                    self.values.append(value)
+                    offset +=8
+                self.children = []
+                for _ in range(20):
+                    child = struct.unpack('>Q', block_data[offset:offset+8])[0]
+                    self.children.append(child)
+                    offset +=8
+                self.keys = self.keys[:self.num_keys]
+                self.values = self.values[:self.num_keys]
+                self.children = self.children[:self.num_keys+1] if any(self.children) else []
+        except IOError as e:
+            logger.error(str(e))
+            print(f"Error: Could not read node from file '{self.index_file_manager.current_file}'.")
+
+    def is_leaf(self):
+        """Checks if the node is a leaf node."""
+        return len(self.children) == 0
+
+    def insert_non_full(self, key, value):
+        """Inserts a key/value pair into a node that is not full."""
+        i = self.num_keys -1
+        if self.is_leaf():
+            self.keys.append(0)
+            self.values.append(0)
+            while i >=0 and key < self.keys[i]:
+                self.keys[i+1] = self.keys[i]
+                self.values[i+1] = self.values[i]
+                i -=1
+            if i >=0 and key == self.keys[i]:
+                raise DuplicateKeyError(f"Error: Key {key} already exists in the index.")
+            self.keys[i+1] = key
+            self.values[i+1] = value
+            self.num_keys +=1
+            self._write_node()
+            return True
+        else:
+            while i >=0 and key < self.keys[i]:
+                i -=1
+            i +=1
+            child_node = BTreeNode(self.index_file_manager, self.children[i])
+            if child_node.num_keys == 2*MIN_DEGREE -1:
+                self.split_child(i, child_node)
+                if key > self.keys[i]:
+                    i +=1
+                elif key == self.keys[i]:
+                    raise DuplicateKeyError(f"Error: Key {key} already exists in the index.")
+            child_node = BTreeNode(self.index_file_manager, self.children[i])
+            return child_node.insert_non_full(key, value)
+
+    def split_child(self, i, y):
+        """Splits a full child node."""
+        z = BTreeNode(self.index_file_manager, is_new=True)
+        z.parent_block = self.block_id
+        t = MIN_DEGREE
+        z.num_keys = t -1
+        z.keys = y.keys[t:]
+        z.values = y.values[t:]
+        if not y.is_leaf():
+            z.children = y.children[t:]
+        y.keys = y.keys[:t-1]
+        y.values = y.values[:t-1]
+        y.children = y.children[:t] if not y.is_leaf() else []
+        y.num_keys = t -1
+        y._write_node()
+        z._write_node()
+        self.keys.insert(i, y.keys.pop())
+        self.values.insert(i, y.values.pop())
+        self.children.insert(i+1, z.block_id)
+        self.num_keys +=1
+        self._write_node()
+        y.parent_block = self.block_id
+        y._write_node()
+        z.parent_block = self.block_id
+        z._write_node()
+
+    def search(self, key):
+        """Searches for a key in the subtree rooted at this node."""
+        i = 0
+        while i < self.num_keys and key > self.keys[i]:
+            i +=1
+        if i < self.num_keys and key == self.keys[i]:
+            return self.values[i]
+        elif self.is_leaf():
+            return None
+        else:
+            child_node = BTreeNode(self.index_file_manager, self.children[i])
+            return child_node.search(key)

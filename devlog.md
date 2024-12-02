@@ -149,3 +149,48 @@ After setting up the basic command loop and the CommandHandler class, I realized
         •	Collected all key/value pairs from the B-tree.
         •	Wrote the key/value pairs to the specified file.
         •	Handled IOError exceptions and informed the user of any issues. 
+
+## December 1st 6:33 pm
+### **Thoughts:**
+
+The focus of this session was to implement the header update mechanism and finalize the `BTreeNode` class. The primary goal was to ensure that the B-Tree structure works seamlessly with file operations. This included creating nodes, writing to and reading from disk, inserting keys/values, splitting full nodes, and searching for keys.
+
+---
+
+### **Plan:**
+
+1. **Update Header Mechanism:**
+   - Implement a method to update the index file's header block with the root block and next block information whenever structural changes occur in the B-Tree.
+
+2. **Complete `BTreeNode` Class:**
+   - Implement methods for:
+     - Reading and writing nodes to disk.
+     - Inserting key-value pairs into non-full nodes.
+     - Splitting full nodes during insertion.
+     - Searching for keys within a node and its children.
+
+3. **Implement Error Handling:**
+   - Add robust error handling for file I/O operations.
+   - Handle cases like duplicate keys, incomplete block reads, and invalid node data.
+
+4. **Test the Code:**
+   - Test all implemented methods for various edge cases, including full nodes, leaf and non-leaf nodes, and invalid inputs.
+
+---
+
+### **Actions Taken:**
+
+#### **1. Header Update Implementation:**
+    1.Implemented `update_header` in `IndexFileManager` to keep the file's header synchronized with changes to the B-Tree structure.
+    2. BTreeNode Initialization:
+	    •Added the BTreeNode class to manage nodes in the B-Tree. Nodes are initialized either as new nodes or by loading from an existing file block
+    3. Node Read and Write:
+	    • Implemented _write_node to serialize node data and save it to the appropriate block in the file.
+	    • Implemented _read_node to deserialize node data from the file.
+    4. Insertion and Splitting:
+
+	    • Implemented insert_non_full to handle insertion of a key-value pair into non-full nodes.
+        • Implemented split_child to split full nodes and propagate keys to parent nodes.
+    5. Search Operation:
+	    • Added a recursive search method to locate keys within a node or its children.
+    
