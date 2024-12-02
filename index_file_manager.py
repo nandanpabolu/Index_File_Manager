@@ -33,7 +33,6 @@ class InvalidCommandError(Exception):
     """Exception raised for invalid commands."""
     pass
 
-# I wrote a decorator to ensure that certain methods are only called when an index file is open.
 def require_file_open(method):
     """Decorator to ensure a file is open before executing certain methods."""
     @functools.wraps(method)
@@ -48,7 +47,6 @@ class CommandHandler:
     """Handles user commands and input parsing."""
 
     def __init__(self, index_file_manager):
-        # I initialized the command handler with a reference to the index file manager.
         self.index_file_manager = index_file_manager
 
     def start(self):
@@ -72,7 +70,6 @@ class CommandHandler:
 
     def handle_command(self, user_input):
         """Parses and dispatches the user command."""
-        # I split the user input into command and arguments.
         parts = user_input.strip().split()
         command = parts[0].lower()
         args = parts[1:]
@@ -321,6 +318,7 @@ class IndexFileManager:
         except IOError as e:
             logger.error(str(e))
             print(f"Error: Could not write to file '{filename}'.")
+
     def update_header(self):
         """Updates the header information in the index file."""
         try:
@@ -393,20 +391,20 @@ class BTreeNode:
                 for _ in range(19):
                     key = struct.unpack('>Q', block_data[offset:offset+8])[0]
                     self.keys.append(key)
-                    offset +=8
+                    offset += 8
                 self.values = []
                 for _ in range(19):
                     value = struct.unpack('>Q', block_data[offset:offset+8])[0]
                     self.values.append(value)
-                    offset +=8
+                    offset += 8
                 self.children = []
                 for _ in range(20):
                     child = struct.unpack('>Q', block_data[offset:offset+8])[0]
                     self.children.append(child)
-                    offset +=8
+                    offset += 8
                 self.keys = self.keys[:self.num_keys]
                 self.values = self.values[:self.num_keys]
-                self.children = self.children[:self.num_keys+1] if any(self.children) else []
+                self.children = self.children[:self.num_keys + 1] if any(self.children) else []
         except IOError as e:
             logger.error(str(e))
             print(f"Error: Could not read node from file '{self.index_file_manager.current_file}'.")
@@ -417,30 +415,30 @@ class BTreeNode:
 
     def insert_non_full(self, key, value):
         """Inserts a key/value pair into a node that is not full."""
-        i = self.num_keys -1
+        i = self.num_keys - 1
         if self.is_leaf():
             self.keys.append(0)
             self.values.append(0)
-            while i >=0 and key < self.keys[i]:
-                self.keys[i+1] = self.keys[i]
-                self.values[i+1] = self.values[i]
-                i -=1
-            if i >=0 and key == self.keys[i]:
+            while i >= 0 and key < self.keys[i]:
+                self.keys[i + 1] = self.keys[i]
+                self.values[i + 1] = self.values[i]
+                i -= 1
+            if i >= 0 and key == self.keys[i]:
                 raise DuplicateKeyError(f"Error: Key {key} already exists in the index.")
-            self.keys[i+1] = key
-            self.values[i+1] = value
-            self.num_keys +=1
+            self.keys[i + 1] = key
+            self.values[i + 1] = value
+            self.num_keys += 1
             self._write_node()
             return True
         else:
-            while i >=0 and key < self.keys[i]:
-                i -=1
-            i +=1
+            while i >= 0 and key < self.keys[i]:
+                i -= 1
+            i += 1
             child_node = BTreeNode(self.index_file_manager, self.children[i])
-            if child_node.num_keys == 2*MIN_DEGREE -1:
+            if child_node.num_keys == 2 * MIN_DEGREE - 1:
                 self.split_child(i, child_node)
                 if key > self.keys[i]:
-                    i +=1
+                    i += 1
                 elif key == self.keys[i]:
                     raise DuplicateKeyError(f"Error: Key {key} already exists in the index.")
             child_node = BTreeNode(self.index_file_manager, self.children[i])
@@ -451,21 +449,21 @@ class BTreeNode:
         z = BTreeNode(self.index_file_manager, is_new=True)
         z.parent_block = self.block_id
         t = MIN_DEGREE
-        z.num_keys = t -1
+        z.num_keys = t - 1
         z.keys = y.keys[t:]
         z.values = y.values[t:]
         if not y.is_leaf():
             z.children = y.children[t:]
-        y.keys = y.keys[:t-1]
-        y.values = y.values[:t-1]
+        y.keys = y.keys[:t - 1]
+        y.values = y.values[:t - 1]
         y.children = y.children[:t] if not y.is_leaf() else []
-        y.num_keys = t -1
+        y.num_keys = t - 1
         y._write_node()
         z._write_node()
         self.keys.insert(i, y.keys.pop())
         self.values.insert(i, y.values.pop())
-        self.children.insert(i+1, z.block_id)
-        self.num_keys +=1
+        self.children.insert(i + 1, z.block_id)
+        self.num_keys += 1
         self._write_node()
         y.parent_block = self.block_id
         y._write_node()
@@ -476,7 +474,7 @@ class BTreeNode:
         """Searches for a key in the subtree rooted at this node."""
         i = 0
         while i < self.num_keys and key > self.keys[i]:
-            i +=1
+            i += 1
         if i < self.num_keys and key == self.keys[i]:
             return self.values[i]
         elif self.is_leaf():
@@ -484,7 +482,7 @@ class BTreeNode:
         else:
             child_node = BTreeNode(self.index_file_manager, self.children[i])
             return child_node.search(key)
-    
+
     def traverse(self, result_list):
         """Performs an in-order traversal of the subtree rooted at this node."""
         for i in range(self.num_keys):
@@ -518,7 +516,7 @@ class BTree:
             self.root._write_node()
             self.index_file_manager.update_header()
         else:
-            if self.root.num_keys == 2*MIN_DEGREE -1:
+            if self.root.num_keys == 2 * MIN_DEGREE - 1:
                 s = BTreeNode(self.index_file_manager, is_new=True)
                 s.children.append(self.root.block_id)
                 s.num_keys = 0
@@ -531,7 +529,7 @@ class BTree:
                 self.root.insert_non_full(key, value)
             else:
                 self.root.insert_non_full(key, value)
-    
+
     def search(self, key):
         """Searches for a key in the B-tree."""
         if self.root is None:
