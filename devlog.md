@@ -246,3 +246,51 @@ To complete the B-Tree implementation, the focus of this session was on traversa
 	2.	B-Tree Insertion in BTree:
 	•	Managed the initialization of the root node when inserting into an empty tree.
 	•	Handled splitting of a full root node and updated the header accordingly.
+
+## December 1st 8:42 pm
+### **Thoughts:**
+
+In this session, the focus was on finalizing key functionalities for the `BTree` class and ensuring proper integration with the main program. The addition of `search` and `traverse` methods ensures that the tree can handle lookups and traversals efficiently. The `main` function serves as the entry point for the program, linking the `IndexFileManager` and `CommandHandler` to provide an interactive user interface.
+### **Plan:**
+
+1. **Search Implementation:**
+   - Add a method to search for a key in the B-Tree starting from the root node.
+   - Ensure recursive calls are managed through the `BTreeNode` class.
+
+2. **Traversal Integration:**
+   - Implement a method to traverse the entire B-Tree and collect key-value pairs in sorted order.
+   - Ensure this method integrates well with the `traverse` method in `BTreeNode`.
+
+3. **Main Functionality:**
+   - Create a `main` function to initialize the program.
+   - Link the `IndexFileManager` and `CommandHandler` for user interaction.
+   - Set up the program to start from the `main` function when executed.
+
+4. **Testing:**
+   - Verify that search operations return correct results for existing and non-existing keys.
+   - Validate traversal outputs for trees of varying depths and structures.
+
+### **Actions Taken:**
+
+#### **1. Search Functionality:**
+- Implemented the `search` method in the `BTree` class to handle lookups:
+  - Checked if the tree is empty.
+  - If not, delegated the search to the root node.
+  ```python
+  def search(self, key):
+      """Searches for a key in the B-tree."""
+      if self.root is None:
+          return None
+      else:
+          return self.root.search(key)
+#### **2. Traversal Integration:**
+
+	•	Added the traverse method to the BTree class:
+	•	Delegated the traversal to the root node.
+	•	Collected all key-value pairs in sorted order for further processing or display.
+
+#### **3. Main Functionality:**
+
+	•	Created a main function to serve as the program’s entry point:
+	•	Initialized the IndexFileManager and CommandHandler.
+	•	Started the command loop for user interaction.

@@ -531,3 +531,24 @@ class BTree:
                 self.root.insert_non_full(key, value)
             else:
                 self.root.insert_non_full(key, value)
+    
+    def search(self, key):
+        """Searches for a key in the B-tree."""
+        if self.root is None:
+            return None
+        else:
+            return self.root.search(key)
+
+    def traverse(self, result_list):
+        """Traverses the B-tree and collects key/value pairs."""
+        if self.root:
+            self.root.traverse(result_list)
+
+def main():
+    """Main function to start the program."""
+    index_file_manager = IndexFileManager()
+    command_handler = CommandHandler(index_file_manager)
+    command_handler.start()
+
+if __name__ == "__main__":
+    main()
